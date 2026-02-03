@@ -85,7 +85,6 @@ class Todo {
   }
 
   void setProgress(bool progress) {
-    print("Changed progress from task $id to $progress");
     db.execute("UPDATE todos SET finished = ? WHERE id == ?", [progress, id]);
 
     dbVersion.value++;

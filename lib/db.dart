@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-late Database db = sqlite3.open("data/sqlite/todos.db");
+Database db = sqlite3.open("data/sqlite/todos.db");
 
 final ValueNotifier<int> dbVersion = ValueNotifier<int>(0);
 

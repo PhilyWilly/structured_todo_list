@@ -34,20 +34,8 @@ class _HomePageState extends State<HomePage> {
     final retObj = getToplevelTodoIdx()
         .map((e) => Todo.fromId(e))
         .where((e) => e.deleted == false);
-    // setSelectedTodos(retObj: retObj);
-    // print("Selection: ${selection}");
     return retObj;
   }
-
-  // void setSelectedTodos({Iterable<Todo>? retObj}) {
-  //   retObj ??= getToplevelTodoIdx()
-  //       .map((e) => Todo.fromId(e))
-  //       .where((e) => e.deleted == false);
-  //   selection = retObj
-  //       .where((e) => e.finished == true)
-  //       .map((e) => e.id)
-  //       .toList();
-  // }
 
   Todo getTodoFromId(int inputId) {
     for (Todo todo in getToplevelTodoObj()) {

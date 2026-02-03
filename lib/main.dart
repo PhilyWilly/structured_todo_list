@@ -39,6 +39,11 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.light,
         accentColor: Colors.blue,
       ),
+      darkTheme: FluentThemeData(
+        brightness: Brightness.dark,
+        accentColor: Colors.purple,
+      ),
+      themeMode: ThemeMode.system,
       home: HomePage(),
     );
   }

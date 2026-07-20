@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:structured_todo_list/db/database_manager.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:structured_todo_list/dialoges/save_todos_dialog.dart';
 import 'package:structured_todo_list/dialoges/todo_creator.dart';
 import 'package:structured_todo_list/src/todo.dart';
 
@@ -47,10 +48,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> newDatabase() async {
+    final bool result = await showSaveTodosDialog(context);
+    if (!result) return;
     await DatabaseManager.instance.wipeDatabase();
   }
 
   Future<void> openDatabase() async {
+    final bool result = await showSaveTodosDialog(context);
+    if (!result) return;
     // Let the user pick a file to import
     try {
       final result = await FilePicker.platform.pickFiles(

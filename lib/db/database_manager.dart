@@ -127,6 +127,7 @@ class DatabaseManager {
       _db = sqlite3.open(dest.path);
       await initializeDatabase();
     }
+    dbPath = null;
     dbVersion.value++;
   }
 }

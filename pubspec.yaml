@@ -37,6 +37,7 @@ dependencies:
   fluent_ui: ^4.13.0
   sqlite3: ^3.1.4
   file_picker: ^5.2.5
+  window_manager: ^0.4.3
 
 dev_dependencies:
   flutter_test:

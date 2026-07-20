@@ -6,6 +6,12 @@ import 'package:structured_todo_list/db/database_manager.dart';
 ///
 /// Returns a Future<bool> that resolves to true if the user chooses to save or not save, and false if they cancel the action.
 Future<bool> showSaveTodosDialog(BuildContext context) async {
+  final entries =
+      DatabaseManager.instance.db
+              .select('SELECT COUNT(*) AS count FROM todos WHERE deleted = 0;')
+              .first['count']
+          as int;
+  if (entries == 0) return true;
   final bool? result = await showDialog<bool?>(
     context: context,
     builder: (context) => ContentDialog(

@@ -1,8 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:sqlite3/sqlite3.dart';
-import 'package:structured_todo_list/db.dart';
+import 'package:sqlite3/sqlite3.dart' hide Row;
+import 'package:structured_todo_list/db/database_manager.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:structured_todo_list/dialoges/todoCreator.dart';
+import 'package:structured_todo_list/dialoges/todo_creator.dart';
 import 'package:structured_todo_list/src/todo.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,11 +14,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Todo> todos = [];
-
   List<int> selection = [];
 
   Iterable<int> getToplevelTodoIdx() {
-    final ResultSet todoResultSet = db.select(''' 
+    final ResultSet todoResultSet = DatabaseManager.instance.db.select(''' 
       SELECT todos.id AS id
       FROM todos 
       LEFT JOIN todo_relations 
@@ -47,9 +46,12 @@ class _HomePageState extends State<HomePage> {
     throw Exception("To child with id found");
   }
 
-  Future<void> importDatabase() async {
-    // Let the user pick a file to import
+  Future<void> newDatabase() async {
+    await DatabaseManager.instance.wipeDatabase();
+  }
 
+  Future<void> openDatabase() async {
+    // Let the user pick a file to import
     try {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: false,
@@ -59,22 +61,9 @@ class _HomePageState extends State<HomePage> {
       if (result == null || result.files.isEmpty) return;
       final String? srcPath = result.files.single.path;
       if (srcPath == null) return;
-      await importDatabaseFromPath(srcPath); // Import logic
-      if (!mounted) return;
-      showDialog<void>(
-        // Show success dialog
-        context: context,
-        builder: (context) => ContentDialog(
-          title: const Text('Import abgeschlossen'),
-          content: Text('Datenbank wurde von $srcPath importiert.'),
-          actions: [
-            Button(
-              child: const Text('OK'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      );
+      await DatabaseManager.instance.openDatabaseFromPath(
+        srcPath,
+      ); // Import logic
     } catch (e) {
       if (!mounted) return;
       showDialog<void>(
@@ -94,20 +83,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> exportDatabase() async {
+  Future<void> saveDatabaseAs() async {
     // Let the user pick a directory to save the DB copy into
     try {
-      final directory = await FilePicker.platform.getDirectoryPath();
+      String? directory = await FilePicker.platform.saveFile(
+        dialogTitle: 'Speichern unter',
+        fileName: 'todos.db',
+        type: FileType.custom,
+        allowedExtensions: ['db', 'sqlite'],
+      );
       if (directory == null || directory.isEmpty) return;
-      final destPath = '$directory/todos.db';
-      await exportDatabaseToPath(destPath); // Make the export
+      if (!directory.endsWith('.db') && !directory.endsWith('.sqlite')) {
+        directory += '.db'; // Append .db if no extension is provided
+      }
+      await DatabaseManager.instance.saveDatabaseToPath(
+        directory,
+      ); // Make the export
+    } catch (e) {
       if (!mounted) return;
       showDialog<void>(
-        // Zeige verifikations Nachricht
+        // Zeige fehlgeschlagender Export Dialog
         context: context,
         builder: (context) => ContentDialog(
-          title: const Text('Export abgeschlossen'),
-          content: Text('Datenbank wurde nach $destPath exportiert.'),
+          title: const Text('Export fehlgeschlagen'),
+          content: Text(e.toString()),
           actions: [
             Button(
               child: const Text('OK'),
@@ -116,13 +115,20 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       );
+    }
+  }
+
+  Future<void> saveDatabase() async {
+    // Save the database to the current path
+    try {
+      await DatabaseManager.instance.saveDatabase();
     } catch (e) {
       if (!mounted) return;
       showDialog<void>(
         // Zeige fehlgeschlagender Export Dialog
         context: context,
         builder: (context) => ContentDialog(
-          title: const Text('Export fehlgeschlagen'),
+          title: const Text('Speichern fehlgeschlagen'),
           content: Text(e.toString()),
           actions: [
             Button(
@@ -147,41 +153,67 @@ class _HomePageState extends State<HomePage> {
             label: const Text('Neu'),
             tooltip: 'Erstellen Sie eine neue Todo',
             onPressed: () {
-              showTodoCreator(context);
+              newDatabase();
             },
           ),
           const CommandBarSeparator(),
           CommandBarButton(
-            icon: const WindowsIcon(WindowsIcons.download),
-            label: const Text('Import'),
+            icon: const WindowsIcon(WindowsIcons.folder_open),
+            label: const Text('Öffnen'),
             tooltip: 'Importieren Sie eine Datenbank',
-            onPressed: importDatabase,
+            onPressed: openDatabase,
           ),
           CommandBarButton(
-            icon: const WindowsIcon(WindowsIcons.upload),
-            label: const Text('Export'),
+            icon: const WindowsIcon(WindowsIcons.save),
+            label: const Text('Speichern'),
             tooltip: 'Exportieren Sie die Datenbank',
-            onPressed: exportDatabase,
+            onPressed: saveDatabase,
+          ),
+          CommandBarButton(
+            icon: const WindowsIcon(WindowsIcons.save_as),
+            label: const Text('Speichern unter'),
+            tooltip: 'Exportieren Sie die Datenbank',
+            onPressed: saveDatabaseAs,
           ),
         ],
       ),
 
       content: Padding(
         padding: const EdgeInsets.only(left: 8.0, right: 24.0, top: 8.0),
-        child: ValueListenableBuilder(
-          valueListenable: dbVersion,
-          builder: (context, value, child) {
-            final todos = getToplevelTodoObj().toList();
+        child: Column(
+          spacing: 12.0,
+          children: [
+            ValueListenableBuilder(
+              valueListenable: DatabaseManager.instance.dbVersion,
+              builder: (context, value, child) {
+                print("DB Version changed: $value");
+                final todos = getToplevelTodoObj().toList();
 
-            return TreeView(
-              selectionMode: TreeViewSelectionMode.multiple,
-              shrinkWrap: true,
-              onSecondaryTap: (item, details) async {
-                debugPrint('onSecondaryTap $item at ${details.globalPosition}');
+                return TreeView(
+                  selectionMode: TreeViewSelectionMode.multiple,
+                  shrinkWrap: true,
+                  onSecondaryTap: (item, details) async {
+                    debugPrint(
+                      'onSecondaryTap $item at ${details.globalPosition}',
+                    );
+                  },
+                  items: todos.map((e) => e.toTree(context)).toList(),
+                );
               },
-              items: todos.map((e) => e.toTree(context)).toList(),
-            );
-          },
+            ),
+            Button(
+              onPressed: () {
+                showTodoCreator(context);
+              },
+              child: Row(
+                spacing: 8.0,
+                children: [
+                  const WindowsIcon(WindowsIcons.add),
+                  const Text('Neue Todo erstellen'),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

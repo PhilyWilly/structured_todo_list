@@ -1,10 +1,10 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
-import 'package:structured_todo_list/db.dart';
+import 'package:structured_todo_list/db/database_manager.dart';
 import 'package:structured_todo_list/db/create_todo.dart';
-import 'package:structured_todo_list/dialoges/todoCreator.dart';
-import 'package:structured_todo_list/dialoges/todoDeleteWarning.dart';
-import 'package:structured_todo_list/dialoges/todoEditor.dart';
+import 'package:structured_todo_list/dialoges/todo_creator.dart';
+import 'package:structured_todo_list/dialoges/todo_delete_warning.dart';
+import 'package:structured_todo_list/dialoges/todo_editor.dart';
 import 'package:structured_todo_list/src/animating_textfield.dart';
 
 const double ICON_SIZE = 14.0;
@@ -29,11 +29,11 @@ class Todo {
   });
 
   factory Todo.fromId(int id) {
-    final ResultSet todoResultSet = db.select(
+    final ResultSet todoResultSet = DatabaseManager.instance.db.select(
       'SELECT * FROM todos WHERE id == ? LIMIT 1',
       [id],
     );
-    final ResultSet relsationResultSet = db.select(
+    final ResultSet relsationResultSet = DatabaseManager.instance.db.select(
       '''SELECT * 
       FROM todo_relations 
       JOIN todos
@@ -66,10 +66,10 @@ class Todo {
 
   double getProgress() {
     final double progress = _getProgress();
-    db.execute("UPDATE todos SET finished = ? WHERE id == ?", [
-      progress == 100.0,
-      id,
-    ]);
+    DatabaseManager.instance.db.execute(
+      "UPDATE todos SET finished = ? WHERE id == ?",
+      [progress == 100.0, id],
+    );
     return progress;
   }
 
@@ -85,9 +85,10 @@ class Todo {
   }
 
   void setProgress(bool progress) {
-    db.execute("UPDATE todos SET finished = ? WHERE id == ?", [progress, id]);
-
-    dbVersion.value++;
+    DatabaseManager.instance.db.execute(
+      "UPDATE todos SET finished = ? WHERE id == ?",
+      [progress, id],
+    );
 
     for (Todo child in children) {
       child.setProgress(progress);
@@ -178,11 +179,10 @@ class Todo {
       },
       expanded: expanded,
       onExpandToggle: (_, _) async {
-        db.execute('UPDATE todos SET expanded = ? WHERE id == ?', [
-          !expanded,
-          id,
-        ]);
-        dbVersion.value++;
+        DatabaseManager.instance.db.execute(
+          'UPDATE todos SET expanded = ? WHERE id == ?',
+          [!expanded, id],
+        );
       },
       children: children.map((e) => e.toTree(context)).toList(),
     );

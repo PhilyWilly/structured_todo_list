@@ -1,16 +1,15 @@
-import 'package:structured_todo_list/db.dart';
+import 'package:structured_todo_list/db/database_manager.dart';
 
 void createTodo(String title, {String description = "", int? parent}) {
-  db.execute('INSERT INTO todos (title, description) VALUES (?,?)', [
-    title,
-    description,
-  ]);
+  DatabaseManager.instance.db.execute(
+    'INSERT INTO todos (title, description) VALUES (?,?)',
+    [title, description],
+  );
   if (parent != null) {
-    final int newTaskId = db.lastInsertRowId;
-    db.execute('INSERT INTO todo_relations (parent, child) VALUES (?, ?)', [
-      parent,
-      newTaskId,
-    ]);
+    final int newTaskId = DatabaseManager.instance.db.lastInsertRowId;
+    DatabaseManager.instance.db.execute(
+      'INSERT INTO todo_relations (parent, child) VALUES (?, ?)',
+      [parent, newTaskId],
+    );
   }
-  dbVersion.value++;
 }

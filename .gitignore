@@ -45,5 +45,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-.db
-/data/sqlite
+*.db
+/data/sqlite/

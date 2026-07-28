@@ -5,7 +5,6 @@ import 'package:structured_todo_list/widgets/custom_tree_view.dart';
 const double ICON_SIZE = 14.0;
 
 class Todo extends CustomTreeViewItem {
-
   Todo({
     required super.id,
     required super.title,
@@ -13,6 +12,7 @@ class Todo extends CustomTreeViewItem {
     super.finished = false,
     super.expanded = true,
     super.deleted = false,
+    super.priority,
     super.children = const [],
   });
 
@@ -37,6 +37,7 @@ class Todo extends CustomTreeViewItem {
     final bool finished = todoResult['finished'] == 1 ? true : false;
     final bool expanded = todoResult['expanded'] == 1 ? true : false;
     final bool deleted = todoResult['deleted'] == 1 ? true : false;
+    final int? priority = todoResult['priority'] as int?;
     final List<Todo> children = relationResultSet
         .map((e) => Todo.fromId(e['child']))
         .toList();
@@ -48,6 +49,7 @@ class Todo extends CustomTreeViewItem {
       finished: finished,
       expanded: expanded,
       deleted: deleted,
+      priority: priority,
       children: children,
     );
   }
@@ -82,6 +84,13 @@ class Todo extends CustomTreeViewItem {
     for (final child in children) {
       (child as Todo).setProgress(progress);
     }
+  }
+
+  void setPriority(int? priority) {
+    DatabaseManager.instance.db.execute(
+      "UPDATE todos SET priority = ? WHERE id == ?",
+      [priority, id],
+    );
   }
 
   Todo? getChildFromId(int inputId) {

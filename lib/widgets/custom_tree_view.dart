@@ -1,7 +1,12 @@
 import "package:fluent_ui/fluent_ui.dart";
 
 class CustomTreeView extends StatefulWidget {
-  const CustomTreeView({super.key, required this.items, required this.itemBuilder, required this.onItemSelected});
+  const CustomTreeView({
+    super.key,
+    required this.items,
+    required this.itemBuilder,
+    required this.onItemSelected,
+  });
 
   final List<CustomTreeViewItem> items;
   final Widget Function(CustomTreeViewItem item) itemBuilder;
@@ -61,7 +66,11 @@ class _CustomTreeViewState extends State<CustomTreeView> {
                 width: 24,
                 child: hasChildren
                     ? IconButton(
-                        icon: Icon(item.expanded ? FluentIcons.chevron_down : FluentIcons.chevron_right),
+                        icon: Icon(
+                          item.expanded
+                              ? FluentIcons.chevron_down
+                              : FluentIcons.chevron_right,
+                        ),
                         onPressed: () {
                           setState(() {
                             item.expanded = !item.expanded;
@@ -94,6 +103,7 @@ abstract class CustomTreeViewItem {
   final bool finished;
   bool expanded;
   final bool deleted;
+  final int? priority;
   final List<CustomTreeViewItem> children;
 
   CustomTreeViewItem({
@@ -103,6 +113,7 @@ abstract class CustomTreeViewItem {
     this.finished = false,
     this.expanded = true,
     this.deleted = false,
+    this.priority,
     this.children = const [],
   });
 }

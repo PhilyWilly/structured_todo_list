@@ -17,7 +17,7 @@ class DatabaseManager {
     return _db;
   }
 
-   Database get silentdb {
+  Database get silentdb {
     return _db;
   }
 
@@ -51,14 +51,22 @@ class DatabaseManager {
       await dbFile.parent.create(recursive: true);
     }
     _db = sqlite3.open(internalDbPath);
-    final ResultSet results = select('''
+    final ResultSet tableChecks = select('''
     SELECT name 
     FROM sqlite_schema 
     WHERE type='table' AND name NOT LIKE 'sqlite_%';
   ''');
-    final List<String> existingTables = results
+    final List<String> existingTables = tableChecks
         .map((row) => row['name'] as String)
         .toList();
+    final ResultSet todoTableCheck = select('''
+      PRAGMA table_info(todos);
+    ''');
+    final List<String> todoTableColumns = todoTableCheck
+        .map((row) => row['name'] as String)
+        .toList();
+
+    print("Todo table columns: $todoTableColumns");
     if (!existingTables.contains('todos')) {
       _db.execute('''
         CREATE TABLE todos (
@@ -67,9 +75,13 @@ class DatabaseManager {
           description TEXT,
           finished BOOL NOT NULL DEFAULT FALSE,
           expanded BOOL NOT NULL DEFAULT TRUE,
-          deleted BOOL NOT NULL DEFAULT FALSE
+          deleted BOOL NOT NULL DEFAULT FALSE,
+          priority INTEGER DEFAULT NULL
         );
   ''');
+    } else if (!todoTableColumns.contains('priority')) {
+      _db.execute('''
+        ALTER TABLE todos ADD COLUMN priority INTEGER DEFAULT NULL;''');
     }
     if (!existingTables.contains('todo_relations')) {
       _db.execute('''
@@ -117,6 +129,7 @@ class DatabaseManager {
     print("After copying database");
     _db = sqlite3.open(dest.path);
     print("After accessing database");
+    initializeDatabase();
 
     // Notify listeners that DB changed
     dbVersion.value++;

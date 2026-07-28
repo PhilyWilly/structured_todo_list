@@ -86,6 +86,18 @@ class Todo extends CustomTreeViewItem {
     }
   }
 
+  double getPriority() {
+    final ownPriority = priority?.toDouble() ?? 0.0;
+    if (children.isEmpty) {
+      return ownPriority;
+    }
+    double totalPriority = ownPriority;
+    for (final child in children) {
+      totalPriority += (child as Todo).getPriority() / children.length;
+    }
+    return totalPriority;
+  }
+
   void setPriority(int? priority) {
     DatabaseManager.instance.db.execute(
       "UPDATE todos SET priority = ? WHERE id == ?",

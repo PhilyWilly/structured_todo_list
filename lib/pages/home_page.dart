@@ -18,6 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Todo> todos = [];
   List<int> selection = [];
+  SortingMethod sortingMethod = SortingMethod.byPriority;
 
   Iterable<int> getToplevelTodoIdx() {
     final ResultSet todoResultSet = DatabaseManager.instance.select(''' 
@@ -148,6 +149,55 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _showSortingDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => ContentDialog(
+        title: const Text('Sortieren'),
+        content: Column(
+          spacing: 4.0,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Button(
+              child: const Text('Nach Priorität sortieren'),
+              onPressed: () {
+                setState(() {
+                  sortingMethod = SortingMethod.byPriority;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            Button(
+              child: const Text('Nach Fortschritt sortieren'),
+              onPressed: () {
+                setState(() {
+                  sortingMethod = SortingMethod.byProgress;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            Button(
+              child: const Text('Nach Titel sortieren'),
+              onPressed: () {
+                setState(() {
+                  sortingMethod = SortingMethod.byTitle;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          Button(
+            child: const Text('Abbrechen'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ScaffoldPage(
@@ -163,7 +213,6 @@ class _HomePageState extends State<HomePage> {
               newDatabase();
             },
           ),
-          const CommandBarSeparator(),
           CommandBarButton(
             icon: const WindowsIcon(WindowsIcons.folder_open),
             label: const Text('Öffnen'),
@@ -182,6 +231,13 @@ class _HomePageState extends State<HomePage> {
             tooltip: 'Exportieren Sie die Datenbank',
             onPressed: saveDatabaseAs,
           ),
+          const CommandBarSeparator(),
+          CommandBarButton(
+            icon: const WindowsIcon(WindowsIcons.sort),
+            label: const Text('Sortieren'),
+            tooltip: 'Todos nach Priorität, Fortschritt oder Titel sortieren',
+            onPressed: () => _showSortingDialog(),
+          ),
         ],
       ),
 
@@ -196,13 +252,22 @@ class _HomePageState extends State<HomePage> {
                 builder: (context, value, child) {
                   print("DB Version changed: $value");
                   final todos = getToplevelTodoObj().toList();
+                  todos.sort((a, b) {
+                    switch (sortingMethod) {
+                      case SortingMethod.byPriority:
+                        return (b.getPriority()).compareTo(a.getPriority());
+                      case SortingMethod.byProgress:
+                        return b.getProgress().compareTo(a.getProgress());
+                      case SortingMethod.byTitle:
+                        return a.title.compareTo(b.title);
+                    }
+                  });
 
                   return CustomTreeView(
                     items: todos,
                     onItemSelected: (item, selected) {
                       final todo = item as Todo;
-                        todo.setProgress(selected);
-                      
+                      todo.setProgress(selected);
                     },
                     itemBuilder: (item) {
                       return TodoWidget(todo: item as Todo);
@@ -229,3 +294,5 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+enum SortingMethod { byPriority, byProgress, byTitle }

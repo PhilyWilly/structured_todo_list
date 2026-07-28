@@ -1,40 +1,28 @@
-import 'package:fluent_ui/fluent_ui.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:structured_todo_list/db/database_manager.dart';
-import 'package:structured_todo_list/db/create_todo.dart';
-import 'package:structured_todo_list/dialoges/todo_creator.dart';
-import 'package:structured_todo_list/dialoges/todo_delete_warning.dart';
-import 'package:structured_todo_list/dialoges/todo_editor.dart';
-import 'package:structured_todo_list/src/animating_textfield.dart';
+import 'package:structured_todo_list/widgets/custom_tree_view.dart';
 
 const double ICON_SIZE = 14.0;
 
-class Todo {
-  int id;
-  String title;
-  String description;
-  bool finished;
-  bool expanded;
-  bool deleted;
-  List<Todo> children;
+class Todo extends CustomTreeViewItem {
 
   Todo({
-    required this.id,
-    required this.title,
-    this.description = "",
-    this.finished = false,
-    this.expanded = true,
-    this.deleted = false,
-    this.children = const [],
+    required super.id,
+    required super.title,
+    super.description = "",
+    super.finished = false,
+    super.expanded = true,
+    super.deleted = false,
+    super.children = const [],
   });
 
   factory Todo.fromId(int id) {
-    final ResultSet todoResultSet = DatabaseManager.instance.db.select(
+    final ResultSet todoResultSet = DatabaseManager.instance.select(
       'SELECT * FROM todos WHERE id == ? LIMIT 1',
       [id],
     );
-    final ResultSet relsationResultSet = DatabaseManager.instance.db.select(
-      '''SELECT * 
+    final ResultSet relationResultSet = DatabaseManager.instance.select(
+      '''SELECT child
       FROM todo_relations 
       JOIN todos
       ON todos.id == todo_relations.child
@@ -49,7 +37,7 @@ class Todo {
     final bool finished = todoResult['finished'] == 1 ? true : false;
     final bool expanded = todoResult['expanded'] == 1 ? true : false;
     final bool deleted = todoResult['deleted'] == 1 ? true : false;
-    final List<Todo> children = relsationResultSet
+    final List<Todo> children = relationResultSet
         .map((e) => Todo.fromId(e['child']))
         .toList();
 
@@ -66,10 +54,11 @@ class Todo {
 
   double getProgress() {
     final double progress = _getProgress();
-    DatabaseManager.instance.db.execute(
+    DatabaseManager.instance.silentdb.execute(
       "UPDATE todos SET finished = ? WHERE id == ?",
       [progress == 100.0, id],
     );
+    print("Progress for Todo $id ($title): $progress%");
     return progress;
   }
 
@@ -78,8 +67,8 @@ class Todo {
       return finished ? 100.0 : 0.0;
     }
     double progress = 0.0;
-    for (Todo child in children) {
-      progress += child.getProgress();
+    for (final child in children) {
+      progress += (child as Todo).getProgress();
     }
     return progress / children.length;
   }
@@ -90,8 +79,8 @@ class Todo {
       [progress, id],
     );
 
-    for (Todo child in children) {
-      child.setProgress(progress);
+    for (final child in children) {
+      (child as Todo).setProgress(progress);
     }
   }
 
@@ -99,111 +88,12 @@ class Todo {
     if (inputId == id) {
       return this;
     }
-    for (Todo child in children) {
-      Todo? childResult = child.getChildFromId(inputId);
+    for (final child in children) {
+      Todo? childResult = (child as Todo).getChildFromId(inputId);
       if (childResult != null) {
         return childResult;
       }
     }
     return null;
-  }
-
-  TreeViewItem toTree(BuildContext context) {
-    final double progress = getProgress();
-    final GlobalKey<AnimatingTextfieldState> textfieldKey = GlobalKey();
-    return TreeViewItem(
-      content: MouseRegion(
-        onExit: (event) => textfieldKey.currentState?.changeState(false),
-        child: SizedBox(
-          width: MediaQuery.sizeOf(context).width - 48,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(
-                    width: MediaQuery.sizeOf(context).width - 450,
-                    child: Text(
-                      title,
-                      style: FluentTheme.of(context).typography.bodyLarge,
-                    ),
-                  ),
-                  // SizedBox(width: 6.0),
-                  // if (description.isNotEmpty)
-                  //   Padding(
-                  //     padding: EdgeInsets.symmetric(horizontal: 8.0),
-                  //     child: Text(
-                  //       description,
-                  //       style: FluentTheme.of(context).typography.body,
-                  //     ),
-                  //   ),
-                ],
-              ),
-              Row(
-                children: [
-                  if (progress > 0 && progress < 100)
-                    Row(
-                      children: [
-                        Row(
-                          spacing: 12.0,
-                          children: [
-                            ProgressBar(value: progress),
-                            Text("${progress.floor()}%"),
-                          ],
-                        ),
-                      ],
-                    ),
-                  SizedBox(width: 16.0),
-                  MouseRegion(
-                    onEnter: (event) =>
-                        textfieldKey.currentState?.changeState(true),
-
-                    child: IconButton(
-                      icon: const WindowsIcon(
-                        WindowsIcons.add,
-                        size: ICON_SIZE,
-                      ),
-                      onPressed: () => showTodoCreator(context, id: id),
-                    ),
-                  ),
-                  // AnimatingTextfield(
-                  //   key: textfieldKey,
-                  //   onSubmitted: (result) =>
-                  //       createTodo(result, parent: id),
-                  // ),
-                  // SizedBox(width: 8.0),
-                  IconButton(
-                    icon: const WindowsIcon(WindowsIcons.edit, size: ICON_SIZE),
-                    onPressed: () => showTodoEditor(context, id),
-                  ),
-                  SizedBox(width: 8.0),
-                  IconButton(
-                    icon: const WindowsIcon(
-                      WindowsIcons.delete,
-                      size: ICON_SIZE,
-                    ),
-                    onPressed: () => showTodoDeleteWarning(context, id),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-      selected: finished,
-      value: id,
-      onInvoked: (item, onInvoked) async {
-        setProgress(item.selected ?? false);
-      },
-      expanded: expanded,
-      onExpandToggle: (_, _) async {
-        DatabaseManager.instance.db.execute(
-          'UPDATE todos SET expanded = ? WHERE id == ?',
-          [!expanded, id],
-        );
-      },
-      children: children.map((e) => e.toTree(context)).toList(),
-    );
   }
 }

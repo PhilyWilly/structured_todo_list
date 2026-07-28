@@ -4,7 +4,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:structured_todo_list/db/database_manager.dart';
 
 Map<int, String> getAllTodoNames() {
-  final ResultSet todoResultSet = DatabaseManager.instance.db.select(
+  final ResultSet todoResultSet = DatabaseManager.instance.select(
     'SELECT title, id FROM todos',
   );
   return Map.fromEntries(
@@ -13,7 +13,7 @@ Map<int, String> getAllTodoNames() {
 }
 
 int getParent(int id) {
-  final ResultSet todoResultSet = DatabaseManager.instance.db.select(
+  final ResultSet todoResultSet = DatabaseManager.instance.select(
     'SELECT parent FROM todo_relations WHERE child == ? LIMIT 1',
     [id],
   );
@@ -23,10 +23,10 @@ int getParent(int id) {
   return todoResultSet[0]['parent'] ?? -1;
 }
 
-void showTodoEditor(BuildContext context, int id) async {
+void showTodoEditor(BuildContext context, {required int id}) async {
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
-  final ResultSet todoResultSet = DatabaseManager.instance.db.select(
+  final ResultSet todoResultSet = DatabaseManager.instance.select(
     'SELECT * FROM todos WHERE id == ? LIMIT 1',
     [id],
   );

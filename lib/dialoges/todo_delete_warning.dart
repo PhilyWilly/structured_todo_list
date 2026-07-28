@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:structured_todo_list/db/database_manager.dart';
 
-void showTodoDeleteWarning(BuildContext context, int id) async {
+void showTodoDeleteWarning(BuildContext context, {required int id} ) async {
   final bool result =
       await showDialog<bool>(
         context: context,

@@ -5,6 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:structured_todo_list/dialoges/save_todos_dialog.dart';
 import 'package:structured_todo_list/dialoges/todo_creator.dart';
 import 'package:structured_todo_list/src/todo.dart';
+import 'package:structured_todo_list/widgets/custom_tree_view.dart';
+import 'package:structured_todo_list/widgets/todo_widget.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({super.key});
@@ -18,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   List<int> selection = [];
 
   Iterable<int> getToplevelTodoIdx() {
-    final ResultSet todoResultSet = DatabaseManager.instance.db.select(''' 
+    final ResultSet todoResultSet = DatabaseManager.instance.select(''' 
       SELECT todos.id AS id
       FROM todos 
       LEFT JOIN todo_relations 
@@ -185,42 +187,43 @@ class _HomePageState extends State<HomePage> {
 
       content: Padding(
         padding: const EdgeInsets.only(left: 8.0, right: 24.0, top: 8.0),
-        child: SingleChildScrollView(
-          child: Column(
-            spacing: 12.0,
-            children: [
-              ValueListenableBuilder(
+        child: Column(
+          spacing: 12.0,
+          children: [
+            Expanded(
+              child: ValueListenableBuilder(
                 valueListenable: DatabaseManager.instance.dbVersion,
                 builder: (context, value, child) {
                   print("DB Version changed: $value");
                   final todos = getToplevelTodoObj().toList();
-          
-                  return TreeView(
-                    selectionMode: TreeViewSelectionMode.multiple,
-                    shrinkWrap: true,
-                    onSecondaryTap: (item, details) async {
-                      debugPrint(
-                        'onSecondaryTap $item at ${details.globalPosition}',
-                      );
+
+                  return CustomTreeView(
+                    items: todos,
+                    onItemSelected: (item, selected) {
+                      final todo = item as Todo;
+                        todo.setProgress(selected);
+                      
                     },
-                    items: todos.map((e) => e.toTree(context)).toList(),
+                    itemBuilder: (item) {
+                      return TodoWidget(todo: item as Todo);
+                    },
                   );
                 },
               ),
-              Button(
-                onPressed: () {
-                  showTodoCreator(context);
-                },
-                child: Row(
-                  spacing: 8.0,
-                  children: [
-                    const WindowsIcon(WindowsIcons.add),
-                    const Text('Neue Todo erstellen'),
-                  ],
-                ),
+            ),
+            Button(
+              onPressed: () {
+                showTodoCreator(context);
+              },
+              child: Row(
+                spacing: 8.0,
+                children: [
+                  const WindowsIcon(WindowsIcons.add),
+                  const Text('Neue Todo erstellen'),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

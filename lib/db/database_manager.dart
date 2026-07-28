@@ -11,8 +11,21 @@ class DatabaseManager {
   late Database _db;
   Database get db {
     print("Accessing database");
-    dbVersion.value++;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      dbVersion.value++;
+    });
     return _db;
+  }
+
+   Database get silentdb {
+    return _db;
+  }
+
+  ResultSet select(String query, [List<Object?>? parameters]) {
+    if (parameters == null) {
+      return _db.select(query);
+    }
+    return _db.select(query, parameters);
   }
 
   String? dbPath;
@@ -38,7 +51,7 @@ class DatabaseManager {
       await dbFile.parent.create(recursive: true);
     }
     _db = sqlite3.open(internalDbPath);
-    final ResultSet results = _db.select('''
+    final ResultSet results = select('''
     SELECT name 
     FROM sqlite_schema 
     WHERE type='table' AND name NOT LIKE 'sqlite_%';

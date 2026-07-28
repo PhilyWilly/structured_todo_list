@@ -93,7 +93,7 @@ class Todo extends CustomTreeViewItem {
     }
     double totalPriority = ownPriority;
     for (final child in children) {
-      totalPriority += (child as Todo).getPriority() / children.length;
+      totalPriority += (child as Todo).getPriority();
     }
     return totalPriority;
   }

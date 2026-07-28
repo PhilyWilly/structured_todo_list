@@ -185,40 +185,42 @@ class _HomePageState extends State<HomePage> {
 
       content: Padding(
         padding: const EdgeInsets.only(left: 8.0, right: 24.0, top: 8.0),
-        child: Column(
-          spacing: 12.0,
-          children: [
-            ValueListenableBuilder(
-              valueListenable: DatabaseManager.instance.dbVersion,
-              builder: (context, value, child) {
-                print("DB Version changed: $value");
-                final todos = getToplevelTodoObj().toList();
-
-                return TreeView(
-                  selectionMode: TreeViewSelectionMode.multiple,
-                  shrinkWrap: true,
-                  onSecondaryTap: (item, details) async {
-                    debugPrint(
-                      'onSecondaryTap $item at ${details.globalPosition}',
-                    );
-                  },
-                  items: todos.map((e) => e.toTree(context)).toList(),
-                );
-              },
-            ),
-            Button(
-              onPressed: () {
-                showTodoCreator(context);
-              },
-              child: Row(
-                spacing: 8.0,
-                children: [
-                  const WindowsIcon(WindowsIcons.add),
-                  const Text('Neue Todo erstellen'),
-                ],
+        child: SingleChildScrollView(
+          child: Column(
+            spacing: 12.0,
+            children: [
+              ValueListenableBuilder(
+                valueListenable: DatabaseManager.instance.dbVersion,
+                builder: (context, value, child) {
+                  print("DB Version changed: $value");
+                  final todos = getToplevelTodoObj().toList();
+          
+                  return TreeView(
+                    selectionMode: TreeViewSelectionMode.multiple,
+                    shrinkWrap: true,
+                    onSecondaryTap: (item, details) async {
+                      debugPrint(
+                        'onSecondaryTap $item at ${details.globalPosition}',
+                      );
+                    },
+                    items: todos.map((e) => e.toTree(context)).toList(),
+                  );
+                },
               ),
-            ),
-          ],
+              Button(
+                onPressed: () {
+                  showTodoCreator(context);
+                },
+                child: Row(
+                  spacing: 8.0,
+                  children: [
+                    const WindowsIcon(WindowsIcons.add),
+                    const Text('Neue Todo erstellen'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

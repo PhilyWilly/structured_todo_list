@@ -114,62 +114,81 @@ class Todo {
     return TreeViewItem(
       content: MouseRegion(
         onExit: (event) => textfieldKey.currentState?.changeState(false),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Text(
-                  title,
-                  style: FluentTheme.of(context).typography.bodyLarge,
-                ),
-                SizedBox(width: 6.0),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: description.isNotEmpty ? 8.0 : 0.0,
-                  ),
-                  child: Text(
-                    description,
-                    style: FluentTheme.of(context).typography.body,
-                  ),
-                ),
-                SizedBox(width: 12.0),
-                MouseRegion(
-                  onEnter: (event) =>
-                      textfieldKey.currentState?.changeState(true),
-
-                  child: IconButton(
-                    icon: const WindowsIcon(WindowsIcons.add, size: ICON_SIZE),
-                    onPressed: () => showTodoCreator(context, id: id),
-                  ),
-                ),
-                AnimatingTextfield(
-                  key: textfieldKey,
-                  onSubmitted: (result) => createTodo(result, parent: id),
-                ),
-                SizedBox(width: 8.0),
-                IconButton(
-                  icon: const WindowsIcon(WindowsIcons.edit, size: ICON_SIZE),
-                  onPressed: () => showTodoEditor(context, id),
-                ),
-                SizedBox(width: 8.0),
-                IconButton(
-                  icon: const WindowsIcon(WindowsIcons.delete, size: ICON_SIZE),
-                  onPressed: () => showTodoDeleteWarning(context, id),
-                ),
-              ],
-            ),
-            Visibility(
-              visible: progress > 0 && progress < 100,
-              child: Row(
-                spacing: 12.0,
+        child: SizedBox(
+          width: MediaQuery.sizeOf(context).width - 48,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ProgressBar(value: progress),
-                  Text("${progress.floor()}%"),
+                  SizedBox(
+                    width: MediaQuery.sizeOf(context).width - 450,
+                    child: Text(
+                      title,
+                      style: FluentTheme.of(context).typography.bodyLarge,
+                    ),
+                  ),
+                  // SizedBox(width: 6.0),
+                  // if (description.isNotEmpty)
+                  //   Padding(
+                  //     padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  //     child: Text(
+                  //       description,
+                  //       style: FluentTheme.of(context).typography.body,
+                  //     ),
+                  //   ),
                 ],
               ),
-            ),
-          ],
+              Row(
+                children: [
+                  if (progress > 0 && progress < 100)
+                    Row(
+                      children: [
+                        Row(
+                          spacing: 12.0,
+                          children: [
+                            ProgressBar(value: progress),
+                            Text("${progress.floor()}%"),
+                          ],
+                        ),
+                      ],
+                    ),
+                  SizedBox(width: 16.0),
+                  MouseRegion(
+                    onEnter: (event) =>
+                        textfieldKey.currentState?.changeState(true),
+
+                    child: IconButton(
+                      icon: const WindowsIcon(
+                        WindowsIcons.add,
+                        size: ICON_SIZE,
+                      ),
+                      onPressed: () => showTodoCreator(context, id: id),
+                    ),
+                  ),
+                  // AnimatingTextfield(
+                  //   key: textfieldKey,
+                  //   onSubmitted: (result) =>
+                  //       createTodo(result, parent: id),
+                  // ),
+                  // SizedBox(width: 8.0),
+                  IconButton(
+                    icon: const WindowsIcon(WindowsIcons.edit, size: ICON_SIZE),
+                    onPressed: () => showTodoEditor(context, id),
+                  ),
+                  SizedBox(width: 8.0),
+                  IconButton(
+                    icon: const WindowsIcon(
+                      WindowsIcons.delete,
+                      size: ICON_SIZE,
+                    ),
+                    onPressed: () => showTodoDeleteWarning(context, id),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       selected: finished,
